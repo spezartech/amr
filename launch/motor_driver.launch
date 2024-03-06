@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+<arg name= "port" default="/dev/ttyACM0"/>
+<arg name= "baud" default="57600" />
+<node pkg="rosserial_python" type="serial_node.py" name="arduino">
+    <param name="port" value="$(arg port)"/>
+    <param name="baud" value="$(arg baud)"/>
+</node>
+<node pkg="amr" name="motor_control" type="motor_control.py" output="screen"></node>
+<node pkg="amr" name="motor_driver" type="motor_driver.py" output="screen"></node>
+<node pkg="teleop_twist_keyboard" name="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" respawn="false"></node>
+
+</launch>
