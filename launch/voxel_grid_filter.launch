@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/camera/depth/color/points" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.01
+      filter_limit_max: 1.5
+      filter_limit_negative: False
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+  
+   <node pkg="nodelet" type="nodelet" name="obstacle_detection" args="standalone rtabmap_ros/obstacles_detection"  output="screen">
+      <param name="wait_for_transform"            value="true"/>
+      <param name="frame_id"                      value="camera_link"/>
+      <remap from="cloud"                         to="/voxel_grid/output"/>
+      <remap from="ground"                        to="/depth/color/ground"/>
+      <remap from="obstacles"                     to="/depth/color/obstacles"/>
+  </node>
+</launch>

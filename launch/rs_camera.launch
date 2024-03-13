@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+<!-- Launching Realsense D435 Camera with Stereo Enabled-->
+<include file="$(find realsense2_camera)/launch/rs_camera.launch">
+<arg name="enable_infra1" value="true"/>
+<arg name="enable_infra2" value="true"/>
+<arg name="filters" value="pointcloud"/>
+<arg name="" value="true"/>
+</include>
+
+</launch>

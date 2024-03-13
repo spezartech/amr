@@ -2,16 +2,17 @@
 <!-- -->
 <launch>
 
+
 <!-- Launching Realsense D435 Camera with Stereo Enabled-->
-<include file="$(find realsense2_camera)/launch/rs_camera.launch">
+<include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
 <arg name="enable_infra1" value="true"/>
 <arg name="enable_infra2" value="true"/>
 <arg name="filters" value="pointcloud"/>
 </include>
 
 <!-- Launching the URDF model-->
-<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro' use_nominal_extrinsics:=true" />
-<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find amr)/urdf/amr.urdf.xacro' use_nominal_extrinsics:=true" />
+<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 <arg name="gui" default="True" />
 <param name="use_gui" value="$(arg gui)" />
   <!-- Convenience launch file to launch odometry, rtabmap and rtabmapviz nodes at once -->
@@ -488,6 +489,29 @@
     <param name="approx_sync" type="bool"   value="$(arg approx_sync)"/>
     <param name="approx_sync_max_interval" type="double" value="$(arg approx_sync_max_interval)"/>
   </node>
+<!--  Navigation Specific-->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/camera/depth/color/points" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.01
+      filter_limit_max: 1.5
+      filter_limit_negative: False
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+  
+  <node pkg="nodelet" type="nodelet" name="obstacle_detection" args="standalone rtabmap_ros/obstacles_detection" clear_params="$(arg clear_params)" output="$(arg output)">
+      <param name="wait_for_transform"            value="true"/>
+      <param name="frame_id"                      value="$(arg frame_id)"/>
+      <remap from="cloud"                         to="/voxel_grid/output"/>
+      <remap from="ground"                        to="/depth/color/ground"/>
+      <remap from="obstacles"                     to="/depth/color/obstacles"/>
+  </node>
+  
   
   <!-- Depth Image to Laser Scan Node -->
   <node name="depthimage_to_laserscan" pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" args="">
@@ -500,11 +524,10 @@
     <!-- PARAMETERS: -->
     <!-- These are the default values. --> 
     <param name="scan_height"     type="int"    value="1"/> <!-- default: 1 pixel. Number of pixel rows used to generate laser scan. -->
-    <param name="scan_time"       type="double" value="0.015"/> <!-- default:0.033, 30 FPS . Time between scans. -->
+    <param name="scan_time"       type="double" value="0.033"/> <!-- default:0.033, 30 FPS . Time between scans. -->
     <param name="range_min"       type="double" value="0.45"/> <!--default:0.45m. Ranges less than this are considered -Inf. -->
-    <param name="range_max"       type="double" value="10.0"/> <!--default: 10m. Ranges less than this are considered +Inf. -->
+    <param name="range_max"       type="double" value="5.0"/> <!--default: 10m. Ranges less than this are considered +Inf. -->
     <param name="output_frame_id" type="str"    value="base_link"/> <!--default: camera_depth_frame. Frame id of the laser scan. -->
 	
   </node>
-
 </launch>
